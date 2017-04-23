@@ -1,11 +1,8 @@
-#TODO: rework history as an array from the start
-#      softmax action selection (output vs. softmax after?)
-#      l1 regularization??
-#      anneal epsilon, learning rate
-#      keep track of avg reward in a running average/sum instead of a list
+#TODO: softmax action selection (output vs. softmax after?)
+#      anneal learning rate ?
 #      consider increasing or lowering penalty for failure
 #      reshape network???
-#      change the single render parameter into 2: render_now and render_always
+
 
 
 import random
