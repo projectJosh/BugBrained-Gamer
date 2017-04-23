@@ -90,7 +90,7 @@ model.compile(optimizer=opt,
 
 
 #how long to run for
-epochs = 200
+epochs = 500
 epoch_length = 200
 epoch_reward = 0
 
@@ -111,7 +111,7 @@ h_obs = np.zeros( (hist_len, len_obs*2 + 3) )
 h_ptr = 0
 h_loop = False #whether we have looped and are overwriting history
 learn_every = 12 #how many actions to take before learning
-learn_num = 5 #how many experiences to learn from each time
+learn_num = 10 #how many experiences to learn from each time
 
 #rendering settings
 render = False #whether to render at all
