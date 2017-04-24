@@ -1,8 +1,11 @@
-#TODO: softmax action selection (output vs. softmax after?)
-#      anneal learning rate ?
+#TODO: rework history as an array from the start
+#      softmax action selection (output vs. softmax after?)
+#      l1 regularization??
+#      anneal epsilon, learning rate
+#      keep track of avg reward in a running average/sum instead of a list
 #      consider increasing or lowering penalty for failure
 #      reshape network???
-
+#      change the single render parameter into 2: render_now and render_always
 
 
 import random
@@ -21,7 +24,7 @@ import gym
 def choose_e_greedy(actions, epsilon):
     choice = random.random()
     if choice < epsilon:
-        return random.randrange(2)
+        return random.randrange(len_action)
     else:
         return actions.argmax()
     
@@ -76,10 +79,6 @@ model = Sequential([
     Activation('linear'),
 ])
 
-lr = .08
-decay = 0 #take this out for now
-momentum = 0.01
-
 opt = optimizers.Adam()
 model.compile(optimizer=opt,
               loss = 'mean_squared_error')
@@ -87,7 +86,7 @@ model.compile(optimizer=opt,
 
 
 #how long to run for
-epochs = 500
+epochs = 250
 epoch_length = 200
 epoch_reward = 0
 
@@ -119,7 +118,7 @@ render_num = 0 #how many games per epoch to render
 #algorithm settings
 e_start = 1
 e_final = .05
-final_epoch = int(.7 * epochs)
+final_epoch = int(.85 * epochs)
 e_change = (e_final - e_start) / final_epoch
 epsilon = e_start
 gamma = .99
