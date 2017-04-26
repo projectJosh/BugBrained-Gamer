@@ -12,16 +12,16 @@
 hidden_nodes = 196
 #how long to run for
 epochs = 100
-epoch_length = 30
+epoch_length = 25
 hist_len = 400000 #how much history: mostly dependent on your RAM
 e_start = 1
 e_final = .05
 e_percent = .4 #what percent of the way through the run to put epsilon at the final value
 gamma = .99
-learn_every = 25 #how many actions to take before learning
-learn_num = 30 #how many experiences to learn from each time
+learn_every = 1 #how many actions to take before learning
+learn_num = 1000 #how many experiences to learn from each time
 loss_penalty = -100
-update_target = 500 #how often to update the target network
+update_target = 10 #how often to update the target network
 
 import random
 import numpy as np
@@ -75,7 +75,7 @@ def train_on_history(model, target, history, h_len, train_num, gamma):
         q_val_array[0][int(history[step_i][-3])] = q_val
         target_array[i] = q_val_array
     #finally, train the model on our data
-    model.fit(observation_array, target_array, batch_size=1, epochs=1, verbose=0, shuffle=True)
+    model.fit(observation_array, target_array, batch_size=10, epochs=1, verbose=0, shuffle=True)
 
 
 
@@ -141,7 +141,7 @@ render_num = 0 #how many games per epoch to render
 final_epoch = int(e_percent * epochs)
 e_change = (e_final - e_start) / final_epoch
 epsilon = e_start
-
+learn_after = int(.1 * epochs)
 
 #filename: game-epochs-epochlen_finalepoch%_learnevery_learnnum
 for i_episode in range(epochs*epoch_length):
@@ -150,7 +150,7 @@ for i_episode in range(epochs*epoch_length):
         target.set_weights( model.get_weights() ) 
     if i_episode % epoch_length < render_num:
         render_now = render
-    if i_episode %learn_every == 0 and i_episode != 0:
+    if i_episode %learn_every == 0 and i_episode != 0 and i_episode > learn_after:
         #if we've filled the history learn from all of it
         learn_len = hist_len-1 if h_loop else h_ptr 
         train_on_history(model, target, h_obs, learn_len, learn_num, gamma)
