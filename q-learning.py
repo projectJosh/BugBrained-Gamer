@@ -90,7 +90,7 @@ len_action = env.action_space.n
 model = Sequential([
     Dense(hidden_nodes, input_shape=(len_obs,), kernel_regularizer=regularizers.l2(0.0001)),
     Activation('tanh'),
-    Dense(hidden_nodes, kernel_regularizer=regularizers.l2(0.0001)),
+    Dense(hidden_nodes, kernel_regularizer=regularizers.l2(0.0000)),
     Activation('tanh'),
     Dense(len_action),
     Activation('linear'),
@@ -98,7 +98,7 @@ model = Sequential([
 target = Sequential([
     Dense(hidden_nodes, input_shape=(len_obs,), kernel_regularizer=regularizers.l2(0.0001)),
     Activation('tanh'),
-    Dense(hidden_nodes, kernel_regularizer=regularizers.l2(0.0001)),
+    Dense(hidden_nodes, kernel_regularizer=regularizers.l2(0.0000)),
     Activation('tanh'),
     Dense(len_action),
     Activation('linear'),
@@ -118,8 +118,6 @@ epoch_reward = 0
 #keep track of avg. reward per epoch and over the run
 partial_reward = 0
 partial_reward_list = []
-total_reward = 0
-total_eps = epochs*epoch_length
 
 #initialize the history
   #this is an array, the first n values are the state we were in, the next n, the state we got to next
@@ -142,6 +140,10 @@ final_epoch = int(e_percent * epochs)
 e_change = (e_final - e_start) / final_epoch
 epsilon = e_start
 learn_after = int(.1 * epochs)
+
+final_score_epoch = int(.05 * epochs)
+final_reward = 0
+num_final_epochs = epochs - final_score_epoch
 
 #filename: game-epochs-epochlen_finalepoch%_learnevery_learnnum
 for i_episode in range(epochs*epoch_length):
@@ -210,16 +212,18 @@ for i_episode in range(epochs*epoch_length):
             #print("Episode finished after {} timesteps".format(t+1))
             #print("Total reward accrued:", total_reward)
             partial_reward += episode_reward
-            total_reward += episode_reward
+            if i_episode > final_score_epoch:
+                final_reward += episode_reward
             break
     if not done:
         print('time limit exceeded')
         print("Total reward accrued:", episode_reward)
         partial_reward += episode_reward
-        total_reward += episode_reward        
-    render_now = False
+        if i_episode > final_score_epoch:
+            final_reward += episode_reward
+    render_now = render
 
-print("average reward accrued:", total_reward / total_eps)
+print("average reward accrued over last episodes:", final_reward / num_final_epochs)
 plt.plot(partial_reward_list)
 plt.ylabel('avg. reward')
 plt.show()
