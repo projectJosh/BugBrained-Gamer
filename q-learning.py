@@ -11,8 +11,8 @@
 
 hidden_nodes = 196
 #how long to run for
-epochs = 100
-epoch_length = 25
+epochs = 40
+epoch_length = 2
 hist_len = 400000 #how much history: mostly dependent on your RAM
 e_start = 1
 e_final = .05
@@ -141,9 +141,9 @@ e_change = (e_final - e_start) / final_epoch
 epsilon = e_start
 learn_after = int(.1 * epochs)
 
-final_score_epoch = int(.05 * epochs)
+final_score_epoch = int(.95 * epochs*epoch_length)
 final_reward = 0
-num_final_epochs = epochs - final_score_epoch
+num_final_epochs = (epochs*epoch_length) - final_score_epoch
 
 #filename: game-epochs-epochlen_finalepoch%_learnevery_learnnum
 for i_episode in range(epochs*epoch_length):
@@ -212,17 +212,18 @@ for i_episode in range(epochs*epoch_length):
             #print("Episode finished after {} timesteps".format(t+1))
             #print("Total reward accrued:", total_reward)
             partial_reward += episode_reward
-            if i_episode > final_score_epoch:
+            if i_episode >= final_score_epoch:
+                print("putting", episode_reward, "into final")
                 final_reward += episode_reward
             break
     if not done:
         print('time limit exceeded')
         print("Total reward accrued:", episode_reward)
         partial_reward += episode_reward
-        if i_episode > final_score_epoch:
+        if i_episode >= final_score_epoch:
             final_reward += episode_reward
     render_now = render
-
+print("final_reward:", final_reward, "num_final_epochs", num_final_epochs, "epochs", epochs, "final_score_epoch", final_score_epoch)
 print("average reward accrued over last episodes:", final_reward / num_final_epochs)
 plt.plot(partial_reward_list)
 plt.ylabel('avg. reward')
