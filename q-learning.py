@@ -12,7 +12,7 @@
 hidden_nodes = 196
 #how long to run for
 epochs = 100
-epoch_length = 20
+epoch_length = 30
 hist_len = 400000 #how much history: mostly dependent on your RAM
 e_start = 1
 e_final = .05
@@ -21,6 +21,7 @@ gamma = .99
 learn_every = 25 #how many actions to take before learning
 learn_num = 30 #how many experiences to learn from each time
 loss_penalty = -100
+update_target = 500 #how often to update the target network
 
 import random
 import numpy as np
@@ -45,7 +46,8 @@ def choose_e_greedy(actions, epsilon):
 #takes a keras net and an array of s,s',a,r rows, and trains the net
 #also needs: the last row in the history that is valid
 #how many entries to train on
-def train_on_history(model, history, h_len, train_num, gamma):
+#a target network to calculate state values
+def train_on_history(model, target, history, h_len, train_num, gamma):
     #print('history:', history.shape)
     #print(history)
     
@@ -66,7 +68,7 @@ def train_on_history(model, history, h_len, train_num, gamma):
     for i,step_i in enumerate(learn_list):
         next_state = history[step_i][len_obs:2*len_obs].reshape(-1,len_obs)
         #h[-2]: reward   
-        q_val = history[step_i][-2] + gamma*(model.predict(next_state).max()) #belman equation: reward + next_q
+        q_val = history[step_i][-2] + gamma*(target.predict(next_state).max()) #belman equation: reward + next_q
         q_val_array = np.zeros((1, len_action))
         #h[-3]: action we took
         #print("action we took:", history[step_i][-3])
@@ -93,11 +95,23 @@ model = Sequential([
     Dense(len_action),
     Activation('linear'),
 ])
+target = Sequential([
+    Dense(hidden_nodes, input_shape=(len_obs,), kernel_regularizer=regularizers.l2(0.0001)),
+    Activation('tanh'),
+    Dense(hidden_nodes, kernel_regularizer=regularizers.l2(0.0001)),
+    Activation('tanh'),
+    Dense(len_action),
+    Activation('linear'),
+])
 
 opt = optimizers.Adam()
 model.compile(optimizer=opt,
               loss = 'mean_squared_error')
+target.compile(optimizer=opt,
+              loss = 'mean_squared_error')
 
+#start off the target network the same as the model
+target.set_weights( model.get_weights() ) 
 
 epoch_reward = 0
 
@@ -131,12 +145,15 @@ epsilon = e_start
 
 #filename: game-epochs-epochlen_finalepoch%_learnevery_learnnum
 for i_episode in range(epochs*epoch_length):
+    if i_episode % update_target == 0:
+        #every so often, set the target equal to the current model
+        target.set_weights( model.get_weights() ) 
     if i_episode % epoch_length < render_num:
         render_now = render
     if i_episode %learn_every == 0 and i_episode != 0:
         #if we've filled the history learn from all of it
         learn_len = hist_len-1 if h_loop else h_ptr 
-        train_on_history(model, h_obs, learn_len, learn_num, gamma)
+        train_on_history(model, target, h_obs, learn_len, learn_num, gamma)
     if i_episode%epoch_length == 0 and i_episode != 0:
         print('episode:', i_episode, 'reward avg. last', epoch_length, 'episodes:\n', partial_reward/epoch_length)
         partial_reward_list.append(partial_reward/epoch_length)
