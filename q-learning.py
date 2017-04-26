@@ -7,6 +7,20 @@
 #      reshape network???
 #      change the single render parameter into 2: render_now and render_always
 
+#tunable parameters:
+
+hidden_nodes = 196
+#how long to run for
+epochs = 100
+epoch_length = 20
+hist_len = 400000 #how much history: mostly dependent on your RAM
+e_start = 1
+e_final = .05
+e_percent = .4 #what percent of the way through the run to put epsilon at the final value
+gamma = .99
+learn_every = 25 #how many actions to take before learning
+learn_num = 30 #how many experiences to learn from each time
+loss_penalty = -100
 
 import random
 import numpy as np
@@ -69,11 +83,12 @@ print('action space:', env.action_space)
 len_obs = env.observation_space.shape[0] #note: env observation space only works when obs are 1D
 len_action = env.action_space.n
 
+
     #initialize the neural net
 model = Sequential([
-    Dense(128, input_shape=(len_obs,), kernel_regularizer=regularizers.l2(0.0001)),
+    Dense(hidden_nodes, input_shape=(len_obs,), kernel_regularizer=regularizers.l2(0.0001)),
     Activation('tanh'),
-    Dense(128, kernel_regularizer=regularizers.l2(0.0001)),
+    Dense(hidden_nodes, kernel_regularizer=regularizers.l2(0.0001)),
     Activation('tanh'),
     Dense(len_action),
     Activation('linear'),
@@ -84,10 +99,6 @@ model.compile(optimizer=opt,
               loss = 'mean_squared_error')
 
 
-
-#how long to run for
-epochs = 100
-epoch_length = 20
 epoch_reward = 0
 
 #keep track of avg. reward per epoch and over the run
@@ -97,7 +108,6 @@ total_reward = 0
 total_eps = epochs*epoch_length
 
 #initialize the history
-hist_len = 200000
   #this is an array, the first n values are the state we were in, the next n, the state we got to next
   #the last 3 entries are respectively: action, reward, done
   #done is a -1 if the game did not end, a 1 if it did
@@ -106,22 +116,18 @@ h_obs = np.zeros( (hist_len, len_obs*2 + 3) )
   #this is the index of the next place to put something into the history
 h_ptr = 0
 h_loop = False #whether we have looped and are overwriting history
-learn_every = 25 #how many actions to take before learning
-learn_num = 30 #how many experiences to learn from each time
 
 #rendering settings
-render = True #whether to render at all
+render = False #whether to render at all
 render_now = render #whether we are currently rendering
-render_num = 1 #how many games per epoch to render
+render_num = 0 #how many games per epoch to render
 
 
 #algorithm settings
-e_start = 1
-e_final = .05
-final_epoch = int(.85 * epochs)
+final_epoch = int(e_percent * epochs)
 e_change = (e_final - e_start) / final_epoch
 epsilon = e_start
-gamma = .99
+
 
 #filename: game-epochs-epochlen_finalepoch%_learnevery_learnnum
 for i_episode in range(epochs*epoch_length):
@@ -164,7 +170,7 @@ for i_episode in range(epochs*epoch_length):
         observation, reward, done, info = env.step(action)
         observation = observation.reshape(-1, len_obs)        
         if done:
-            reward = -10
+            reward = loss_penalty
             #this is to resolve the fact that we don't learn when the game ends
             
         #record everything into our history array
